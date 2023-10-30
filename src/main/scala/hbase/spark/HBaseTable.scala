@@ -11,14 +11,21 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import java.util
 import scala.collection.JavaConverters._
 
-case class HBaseTable (session: SparkSession, catalogConf: CaseInsensitiveStringMap, connector: HBaseConnector, tableName: String, optionalSchema: Option[StructType] = None)
+// catalogConf: CaseInsensitiveStringMap
+case class HBaseTable(tableName: String,  namespace: String, catalog: String, optionalSchema: Option[StructType] = None)
   extends Table
   with SupportsRead
   with SupportsWrite {
   override def name(): String = tableName
 
+  val schemaForLongRead: StructType =
+    StructType(Seq(StructField("rowkey", BinaryType, nullable = true),
+      StructField("cf", BinaryType, nullable = true),
+      StructField("cq", BinaryType, nullable = true),
+      StructField("value", BinaryType, nullable = true)))
+
   override def schema(): StructType = optionalSchema
-    .getOrElse(StructType.apply(Seq(StructField("rowkey", BinaryType, nullable = true))))
+    .getOrElse(schemaForLongRead)
 
   override def capabilities(): util.Set[TableCapability] = Set(
     TableCapability.ACCEPT_ANY_SCHEMA,
@@ -28,8 +35,8 @@ case class HBaseTable (session: SparkSession, catalogConf: CaseInsensitiveString
     TableCapability.TRUNCATE).asJava
 
   override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder = {
-    val combinedOptions = (catalogConf.asScala ++ options.asScala).asJava
-    HBaseScanBuilder(session, new CaseInsensitiveStringMap(combinedOptions))
+    val combinedOptions = (options.asScala).asJava
+    HBaseScanBuilder(tableName, namespace, catalog)
   }
 
   override def newWriteBuilder(info: LogicalWriteInfo): WriteBuilder = ???

@@ -8,7 +8,7 @@ import org.scalatest.Suite
 import java.io.File
 
 trait SparkSuite extends Suite {
-  val propertiesUrl = new File("utilities/src/test/resources/log4j.properties").toURI.toURL
+  val propertiesUrl = new File("src/test/resources/log4j.properties").toURI.toURL
   PropertyConfigurator.configure(propertiesUrl)
   lazy implicit val spark: SparkSession = {
     System.setSecurityManager(null)

@@ -1,13 +1,14 @@
 package am
 package hbase.spark
 
-import org.apache.hadoop.hbase.HBaseConfiguration
-import org.apache.hadoop.hbase.client.{Connection, ConnectionFactory}
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.hbase.TableName
+import org.apache.hadoop.hbase.client.{Connection, ConnectionFactory, Table}
 import org.apache.spark.internal.Logging
 
 import scala.language.reflectiveCalls
 
-class HBaseConnector(val conf: HBaseConfiguration)
+object HBaseConnector
   extends Serializable with Logging {
 
   /** Connection configurator */
@@ -34,11 +35,13 @@ class HBaseConnector(val conf: HBaseConfiguration)
     }
   }
 
-  /** Allows to use Cassandra `Session` in a safe way without
-   * risk of forgetting to close it. The `Session` object obtained through this method
-   * is a proxy to a shared, single `Session` associated with the cluster.
-   * Internally, the shared underlying `Session` will be closed shortly after all the proxies
-   * are closed. */
+  def withTable[T](tableName: String)(code: Table => T): T = {
+    closeResourceAfterUse(openSession()) { session =>
+      val table = session.getTable(TableName.valueOf(tableName))
+      code(table)
+    }
+  }
+
   def withSessionDo[T](code: Connection => T): T = {
     closeResourceAfterUse(openSession()) { session =>
       code(session)

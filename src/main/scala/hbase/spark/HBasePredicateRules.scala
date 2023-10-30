@@ -8,7 +8,7 @@ import org.apache.spark.sql.sources.Filter
 case class AnalyzedPredicates(
                                handledByHBase: Set[Filter],
                                handledBySpark: Set[Filter] ){
-  override def toString(): String = {
+  override def toString: String = {
     s"""HBase Filters: [${handledByHBase.mkString(", ")}]
        |Spark Filters [${handledBySpark.mkString(", ")}]""".stripMargin
   }
